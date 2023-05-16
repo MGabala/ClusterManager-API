@@ -1,8 +1,5 @@
-﻿using ClusterManager_API.Models;
-using ClusterManager_API.Repositories;
-
+﻿using ClusterManager_API.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 namespace ClusterManager_API.Controllers
 {
@@ -14,11 +11,30 @@ namespace ClusterManager_API.Controllers
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
-        [HttpGet]
-        public ActionResult<IEnumerable<string>> GetMachines(string clusterName, string host)
+
+        /// <summary>
+        /// Pobiera listę maszyn z określonego hosta w klastrze.
+        /// </summary>
+        /// <param name="clusterName">Nazwa klastra.</param>
+        /// <param name="host">Nazwa hosta.</param>
+        /// <returns>Lista identyfikatorów maszyn.</returns>
+        [HttpGet("GetMachines")]
+        public async Task<ActionResult<IEnumerable<string>>> GetMachines(string clusterName, string host)
         {
-            return NotFound("Method is not implemented.");
+            var clusterConfig = await _repository.LoadDataIntoMemory();
+            var cluster = clusterConfig.Clusters.FirstOrDefault(c => c.Name == clusterName);
+
+            if (cluster != null && cluster.Hosts.Any(h => h.Name == host))
+            {
+                var machines = cluster.Hosts.FirstOrDefault(h => h.Name == host)?.Machines;
+
+                var machineIds = machines!.Select(m => m.MachineId);
+                return Ok(machineIds);
+            }
+            return BadRequest("Nie znaleziono klastra lub hosta.");
         }
+
+
 
         [HttpGet]
         [Route("{machineId}/snapshots")]
