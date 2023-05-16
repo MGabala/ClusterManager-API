@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ClusterManager_API.Controllers
 {
-    [ApiController, Route("api/[controller]")]
+    [ApiController, Route("api")]
     public class MainController : ControllerBase
     {
         private readonly IMainRepository _repository;
@@ -18,7 +18,7 @@ namespace ClusterManager_API.Controllers
         /// <param name="clusterName">Nazwa klastra.</param>
         /// <param name="host">Nazwa hosta.</param>
         /// <returns>Lista identyfikatorów maszyn.</returns>
-        [HttpGet("GetMachines")]
+        [HttpGet("clusters/{clusterName}/{host}/machines")]
         public async Task<ActionResult<IEnumerable<string>>> GetMachines(string clusterName, string host)
         {
             var clusterConfig = await _repository.LoadDataIntoMemory();
@@ -27,21 +27,38 @@ namespace ClusterManager_API.Controllers
             if (cluster != null && cluster.Hosts.Any(h => h.Name == host))
             {
                 var machines = cluster.Hosts.FirstOrDefault(h => h.Name == host)?.Machines;
-
                 var machineIds = machines!.Select(m => m.MachineId);
                 return Ok(machineIds);
             }
             return BadRequest("Nie znaleziono klastra lub hosta.");
         }
 
-
-
+        /// <summary>
+        /// Pobiera listę snapshotów dla określonej maszyny w klastrze.
+        /// </summary>
+        /// <param name="clusterName">Nazwa klastra.</param>
+        /// <param name="host">Nazwa hosta.</param>
+        /// <param name="machineId">Identyfikator maszyny.</param>
+        /// <returns>Lista snapshotów.</returns>
         [HttpGet]
-        [Route("{machineId}/snapshots")]
-        public ActionResult<IEnumerable<string>> GetSnapshots(string clusterName, string host, string machineId)
+        [Route("clusters/{clusterName}/machines/{machineId}/snapshots")]
+        public async Task<ActionResult<IEnumerable<string>>> GetSnapshots(string clusterName, string host, string machineId)
         {
-            return NotFound("Method is not implemented.");
+            var clusterConfig = await _repository.LoadDataIntoMemory();
+            var cluster = clusterConfig.Clusters.FirstOrDefault(c => c.Name == clusterName);
+
+            if (cluster != null && cluster.Hosts.Any(h => h.Name == host))
+            {
+                var machine = cluster.Hosts.FirstOrDefault(h => h.Name == host)?.Machines.FirstOrDefault(m => m.MachineId == machineId);
+
+                if (machine != null)
+                {
+                    return new List<string> { "Snapshot1", "Snapshot2", "Snapshot3" };
+                }
+            }
+            return BadRequest("Nie znaleziono klastra, hosta lub maszyny.");
         }
+
 
         [HttpGet]
         [Route("{machineId}/status")]
