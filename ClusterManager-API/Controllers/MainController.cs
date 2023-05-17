@@ -29,13 +29,20 @@ namespace ClusterManager_API.Controllers
                 var hostInCluster = cluster.Hosts.FirstOrDefault(h => h.Name == host);
                 if (hostInCluster != null)
                 {
-                    var machines = hostInCluster.Machines;
-                    var machineIds = machines.Select(m => m.MachineId);
-                    return Ok(machineIds);
+                    if (hostInCluster.IsApiEnabled)
+                    {
+                        var machines = hostInCluster.Machines;
+                        var machineIds = machines.Select(m => m.MachineId);
+                        return Ok(machineIds);
+                    }
+                    else
+                    {
+                        return BadRequest("API na danym hoście jest wyłączone.");
+                    }
                 }
                 else
                 {
-                    return BadRequest("Dana maszyna nie znajduje się na przekazanym hoście w klastrze.");
+                    return BadRequest("Dany host nie istnieje w klastrze.");
                 }
             }
             else
@@ -63,14 +70,21 @@ namespace ClusterManager_API.Controllers
                 var hostInCluster = cluster.Hosts.FirstOrDefault(h => h.Name == host);
                 if (hostInCluster != null)
                 {
-                    var machine = hostInCluster.Machines.FirstOrDefault(m => m.MachineId == machineId);
-                    if (machine != null)
+                    if (hostInCluster.IsApiEnabled)
                     {
-                        return new List<string> { "Snapshot1", "Snapshot2", "Snapshot3" };
+                        var machine = hostInCluster.Machines.FirstOrDefault(m => m.MachineId == machineId);
+                        if (machine != null)
+                        {
+                            return new List<string> { "Snapshot1", "Snapshot2", "Snapshot3" };
+                        }
+                        else
+                        {
+                            return BadRequest("Dana maszyna nie znajduje się na przekazanym hoście w klastrze.");
+                        }
                     }
                     else
                     {
-                        return BadRequest("Dana maszyna nie znajduje się na przekazanym hoście w klastrze.");
+                        return BadRequest("API na danym hoście jest wyłączone.");
                     }
                 }
                 else
@@ -83,7 +97,6 @@ namespace ClusterManager_API.Controllers
                 return BadRequest("Dany klaster nie istnieje.");
             }
         }
-
 
         /// <summary>
         /// Pobiera informacje o wykorzystaniu danej maszyny (CPU, dysków, ruch sieciowy itp.).
@@ -104,23 +117,30 @@ namespace ClusterManager_API.Controllers
                 var hostInCluster = cluster.Hosts.FirstOrDefault(h => h.Name == host);
                 if (hostInCluster != null)
                 {
-                    var machine = hostInCluster.Machines.FirstOrDefault(m => m.MachineId == machineId);
-                    if (machine != null)
+                    if (hostInCluster.IsApiEnabled)
                     {
-                        var machineStatus = new
+                        var machine = hostInCluster.Machines.FirstOrDefault(m => m.MachineId == machineId);
+                        if (machine != null)
                         {
-                            CPUUsage = "30% 4,05 Ghz",
-                            RAM = "15,9/31,9GB (50%)",
-                            DiskUsage = "60%",
-                            Ethernet = "Wysył.: 1,4 Mb/s Odebr.: 344 Kb/s",
-                            GPU = "6% (35°C)"
-                        };
+                            var machineStatus = new
+                            {
+                                CPUUsage = "30% 4,05 Ghz",
+                                RAM = "15,9/31,9GB (50%)",
+                                DiskUsage = "60%",
+                                Ethernet = "Wysył.: 1,4 Mb/s Odebr.: 344 Kb/s",
+                                GPU = "6% (35°C)"
+                            };
 
-                        return machineStatus;
+                            return machineStatus;
+                        }
+                        else
+                        {
+                            return BadRequest("Dana maszyna nie znajduje się na przekazanym hoście w klastrze.");
+                        }
                     }
                     else
                     {
-                        return BadRequest("Dana maszyna nie znajduje się na przekazanym hoście w klastrze.");
+                        return BadRequest("API na danym hoście jest wyłączone.");
                     }
                 }
                 else
