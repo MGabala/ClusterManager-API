@@ -24,13 +24,24 @@ namespace ClusterManager_API.Controllers
             var clusterConfig = await _repository.LoadDataIntoMemory();
             var cluster = clusterConfig.Clusters.FirstOrDefault(c => c.Name == clusterName);
 
-            if (cluster != null && cluster.Hosts.Any(h => h.Name == host))
+            if (cluster != null)
             {
-                var machines = cluster.Hosts.FirstOrDefault(h => h.Name == host)?.Machines;
-                var machineIds = machines!.Select(m => m.MachineId);
-                return Ok(machineIds);
+                var hostInCluster = cluster.Hosts.FirstOrDefault(h => h.Name == host);
+                if (hostInCluster != null)
+                {
+                    var machines = hostInCluster.Machines;
+                    var machineIds = machines.Select(m => m.MachineId);
+                    return Ok(machineIds);
+                }
+                else
+                {
+                    return BadRequest("Dana maszyna nie znajduje się na przekazanym hoście w klastrze.");
+                }
             }
-            return BadRequest("Nie znaleziono klastra lub hosta.");
+            else
+            {
+                return BadRequest("Dany klaster nie istnieje.");
+            }
         }
 
         /// <summary>
@@ -47,17 +58,32 @@ namespace ClusterManager_API.Controllers
             var clusterConfig = await _repository.LoadDataIntoMemory();
             var cluster = clusterConfig.Clusters.FirstOrDefault(c => c.Name == clusterName);
 
-            if (cluster != null && cluster.Hosts.Any(h => h.Name == host))
+            if (cluster != null)
             {
-                var machine = cluster.Hosts.FirstOrDefault(h => h.Name == host)?.Machines.FirstOrDefault(m => m.MachineId == machineId);
-
-                if (machine != null)
+                var hostInCluster = cluster.Hosts.FirstOrDefault(h => h.Name == host);
+                if (hostInCluster != null)
                 {
-                    return new List<string> { "Snapshot1", "Snapshot2", "Snapshot3" };
+                    var machine = hostInCluster.Machines.FirstOrDefault(m => m.MachineId == machineId);
+                    if (machine != null)
+                    {
+                        return new List<string> { "Snapshot1", "Snapshot2", "Snapshot3" };
+                    }
+                    else
+                    {
+                        return BadRequest("Dana maszyna nie znajduje się na przekazanym hoście w klastrze.");
+                    }
+                }
+                else
+                {
+                    return BadRequest("Dany host nie istnieje w klastrze.");
                 }
             }
-            return BadRequest("Nie znaleziono klastra, hosta lub maszyny.");
+            else
+            {
+                return BadRequest("Dany klaster nie istnieje.");
+            }
         }
+
 
         /// <summary>
         /// Pobiera informacje o wykorzystaniu danej maszyny (CPU, dysków, ruch sieciowy itp.).
@@ -73,26 +99,39 @@ namespace ClusterManager_API.Controllers
             var clusterConfig = await _repository.LoadDataIntoMemory();
             var cluster = clusterConfig.Clusters.FirstOrDefault(c => c.Name == clusterName);
 
-            if (cluster != null && cluster.Hosts.Any(h => h.Name == host))
+            if (cluster != null)
             {
-                var machine = cluster.Hosts.FirstOrDefault(h => h.Name == host)?.Machines.FirstOrDefault(m => m.MachineId == machineId);
-
-                if (machine != null)
+                var hostInCluster = cluster.Hosts.FirstOrDefault(h => h.Name == host);
+                if (hostInCluster != null)
                 {
-                    var machineStatus = new
+                    var machine = hostInCluster.Machines.FirstOrDefault(m => m.MachineId == machineId);
+                    if (machine != null)
                     {
-                        CPUUsage = "30% 4,05 Ghz",
-                        RAM = "15,9/31,9GB (50%)",
-                        DiskUsage = "60%",
-                        Ethernet = "Wysył.: 1,4 Mb/s Odebr.: 344 Kb/s",
-                        GPU = "6% (35°C)"
-                    };
+                        var machineStatus = new
+                        {
+                            CPUUsage = "30% 4,05 Ghz",
+                            RAM = "15,9/31,9GB (50%)",
+                            DiskUsage = "60%",
+                            Ethernet = "Wysył.: 1,4 Mb/s Odebr.: 344 Kb/s",
+                            GPU = "6% (35°C)"
+                        };
 
-                    return machineStatus;
+                        return machineStatus;
+                    }
+                    else
+                    {
+                        return BadRequest("Dana maszyna nie znajduje się na przekazanym hoście w klastrze.");
+                    }
+                }
+                else
+                {
+                    return BadRequest("Dany host nie istnieje w klastrze.");
                 }
             }
-            return BadRequest("Nie znaleziono klastra, hosta lub maszyny.");
+            else
+            {
+                return BadRequest("Dany klaster nie istnieje.");
+            }
         }
-
     }
 }
